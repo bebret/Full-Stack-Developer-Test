@@ -1,0 +1,33 @@
+{
+  "name": "transaction-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Web app yang mengonsumsi viewData.json dengan grid table ter-grouping per tahun & bulan, plus REST API dan PostgreSQL",
+  "workspaces": [
+    "server",
+    "client"
+  ],
+  "scripts": {
+    "db:up": "docker compose up -d",
+    "db:down": "docker compose down",
+    "db:reset": "docker compose down -v && docker compose up -d",
+    "db:logs": "docker compose logs -f db",
+    "seed": "npm run seed --workspace server",
+    "dev:server": "npm run dev --workspace server",
+    "dev:client": "npm run dev --workspace client",
+    "dev": "concurrently -n api,web -c blue,green \"npm:dev:server\" \"npm:dev:client\"",
+    "build": "npm run build --workspace client",
+    "preview": "npm run preview --workspace client",
+    "test:e2e": "node scripts/e2e-smoke.mjs",
+    "demo:errors": "node scripts/demo-errors.mjs",
+    "capture:errors": "node scripts/capture-error-screenshots.mjs",
+    "start:server": "npm run start --workspace server"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.5",
+    "puppeteer-core": "^25.15.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

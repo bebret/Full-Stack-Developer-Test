@@ -1,0 +1,49 @@
+=== DEMO ERROR HANDLING & TABRAKAN DATA ===
+API      : http://localhost:3001/api
+Waktu    : 2026-10-20T16:07:56.603Z
+
+- VALIDATION_ERROR   HTTP 400  code=VALIDATION_ERROR
+    POST /transactions dengan body kosong -> validasi per field.
+    response: {"error":"Data yang dikirim tidak valid.","code":"VALIDATION_ERROR","requestId":"bf9e1c92-9f5b-47f7-89e2-517c5b3ba3ff","errors":[{"field":"productID","message":"productID wajib diisi."},{"field":"productName","message":"productName wajib diisi."},{"field":"amount","message":"amount harus berupa angka >= 0."},{"field":"status","message":"status wajib berupa angka."},{"field":"transactionDate","message":"transactionDate tidak valid, gunakan format YYYY-MM-DD HH:MM:SS."}]}
+
+- MALFORMED_JSON     HTTP 400  code=MALFORMED_JSON
+    POST /transactions dengan JSON rusak -> body ditolak sebelum masuk logika bisnis.
+    response: {"error":"Body request bukan JSON yang valid.","code":"MALFORMED_JSON","requestId":"e404181e-d028-4ef0-bad8-653a7af4f691","details":{"reason":"Expected double-quoted property name in JSON at position 18 (line 1 column 19)"}}
+
+- INVALID_STATUS     HTTP 400  code=INVALID_STATUS
+    POST dengan status 9 yang tidak ada di tabel statuses.
+    response: {"error":"Status 9 tidak terdaftar pada tabel statuses.","code":"INVALID_STATUS","requestId":"211d00a6-cbe2-46c2-a9e8-4adf581f7ecb","errors":[{"field":"status","message":"status 9 tidak terdaftar."}]}
+
+- NOT_FOUND          HTTP 404  code=NOT_FOUND
+    GET transaksi dengan id yang tidak ada.
+    response: {"error":"Transaksi dengan id 999999 tidak ditemukan.","code":"NOT_FOUND","requestId":"8a555f6d-0078-4e7d-ada2-61bd72347223"}
+
+- INVALID_ID         HTTP 400  code=INVALID_ID
+    GET transaksi dengan id bukan angka.
+    response: {"error":"Nilai id \"abc\" tidak valid, harus berupa angka bulat.","code":"INVALID_ID","requestId":"d256abef-156b-4ca4-9c88-f3f5eb5cd127"}
+
+- DUPLICATE_KEY      HTTP 409  code=DUPLICATE_KEY
+    POST dengan id 1372 yang sudah dipakai -> tabrakan data (melanggar primary key).
+    response: {"error":"Transaksi dengan id 1372 sudah ada (tabrakan data).","code":"DUPLICATE_KEY","requestId":"5f27b0f5-a2dc-42dd-9c19-1ee17722957a","details":{"conflictOn":"transactions.id","conflictingId":1372}}
+
+  (versi #1372 dinaikkan diam-diam menjadi 11)
+
+- VERSION_CONFLICT   HTTP 409  code=VERSION_CONFLICT
+    PUT memakai version lama setelah data diubah proses lain -> tabrakan data (optimistic locking).
+    response: {"error":"Data sudah diubah oleh proses/pengguna lain sejak terakhir dibaca (tabrakan data). Muat ulang data lalu ulangi perubahan.","code":"VERSION_CONFLICT","requestId":"2bcfa5de-71a2-4f2b-8fb5-37117c3f5380","details":{"expectedVersion":10,"currentVersion":11,"updatedAt":"2026-10-20 16:07:56.667287+00","current":{"id":1372,"productID":"10001","productName":"Test 1","amount":1000,"customerName":"abc","status":0,"transactionDate":"2022-07-10 11:14:52","createBy":"abc","createOn":"2022-07-10 11:14:52","version":11,"updatedAt":"2026-10-20 16:07:56.667287+00"}}}
+
+- ENDPOINT_NOT_FOUND HTTP 404  code=ENDPOINT_NOT_FOUND
+    GET path yang tidak terdaftar.
+    response: {"error":"Endpoint tidak ditemukan.","code":"ENDPOINT_NOT_FOUND","requestId":"76bd8a37-dd9b-496a-ba0f-c21035b69111","hint":"Path \"GET /api/transactions/1/extra\" tidak terdaftar. Lihat daftar endpoint di GET /api"}
+
+=== LOG SERVER (error handled, 10 terakhir) ===
+{"time":"2026-10-20T16:02:46.022Z","level":"warn","message":"request rejected","requestId":"650d47c6-2508-4827-a4e6-25686b95dffe","method":"POST","path":"/api/transactions","status":400,"durationMs":18}
+{"time":"2026-10-20T16:02:46.029Z","level":"warn","message":"request rejected","requestId":"db2356c4-42e2-49eb-acad-dbf6936775cf","method":"GET","path":"/api/transactions/999999","status":404,"durationMs":4}
+{"time":"2026-10-20T16:07:56.637Z","level":"warn","message":"request rejected","requestId":"bf9e1c92-9f5b-47f7-89e2-517c5b3ba3ff","method":"POST","path":"/api/transactions","status":400,"durationMs":2}
+{"time":"2026-10-20T16:07:56.645Z","level":"warn","message":"request rejected","requestId":"e404181e-d028-4ef0-bad8-653a7af4f691","method":"POST","path":"/api/transactions","status":400,"durationMs":2}
+{"time":"2026-10-20T16:07:56.649Z","level":"warn","message":"request rejected","requestId":"211d00a6-cbe2-46c2-a9e8-4adf581f7ecb","method":"POST","path":"/api/transactions","status":400,"durationMs":3}
+{"time":"2026-10-20T16:07:56.653Z","level":"warn","message":"request rejected","requestId":"8a555f6d-0078-4e7d-ada2-61bd72347223","method":"GET","path":"/api/transactions/999999","status":404,"durationMs":2}
+{"time":"2026-10-20T16:07:56.656Z","level":"warn","message":"request rejected","requestId":"d256abef-156b-4ca4-9c88-f3f5eb5cd127","method":"GET","path":"/api/transactions/abc","status":400,"durationMs":2}
+{"time":"2026-10-20T16:07:56.660Z","level":"warn","message":"request rejected","requestId":"5f27b0f5-a2dc-42dd-9c19-1ee17722957a","method":"POST","path":"/api/transactions","status":409,"durationMs":3}
+{"time":"2026-10-20T16:07:56.674Z","level":"warn","message":"request rejected","requestId":"2bcfa5de-71a2-4f2b-8fb5-37117c3f5380","method":"PUT","path":"/api/transactions/1372","status":409,"durationMs":3}
+{"time":"2026-10-20T16:07:56.676Z","level":"warn","message":"request rejected","requestId":"76bd8a37-dd9b-496a-ba0f-c21035b69111","method":"GET","path":"/api/transactions/1/extra","status":404,"durationMs":1}
