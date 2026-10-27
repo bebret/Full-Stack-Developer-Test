@@ -299,19 +299,6 @@ PASS  Tidak ada error runtime di browser
 
 Data uji E2E selalu dibuat lalu dihapus kembali, sehingga database tetap berisi 12 transaksi asli. Build produksi juga lolos: `npm run build` &rarr; 36 modul, `dist/index.html` + CSS + JS.
 
-## Share ke GitHub
-
-Repo belum di-commit. Untuk mempublikasikan:
-
-```bash
-git init
-git add .
-git commit -m "feat: transaction app with grouped grid, CRUD, Express API and PostgreSQL"
-git branch -M main
-git remote add origin https://github.com/<username>/<repo>.git
-git push -u origin main
-```
-
 `.gitignore` sudah mengecualikan `node_modules`, `dist`, dan file `.env`.
 
 ## Roadmap
